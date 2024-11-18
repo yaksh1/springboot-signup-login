@@ -20,7 +20,7 @@ This project is a quickstart template of registration and login process with JWT
 - **User Authentication**: Login/signup with email verification using OTP.
 - **JWT Token**: Used for securing API endpoints, ensuring only authorized users can access them.
 - **Email Verification**: Sends OTP for user verification. Resend verification code available.
-- **Change Password**: Users can change their passwords after logging in.
+- **Change Password**: Users can change their passwords by clicking on link sent in mail.
 - **Custom Exception Handling**: Handles common errors gracefully and provides meaningful feedback.
 - **Database**:
   - **MySQL** for user data storage.
@@ -34,7 +34,8 @@ base url -> `http://localhost:8080`
 - `/auth/register` - Register a new user
 - `/auth/login` - Get a JWT token after successful login
 - `/auth/verify` - Email verification with OTP
-- `/auth/forgotPassword` - Change the user's password
+- `/auth/forgotPassword` - Get the password reset link in the registered mail
+- `/auth/reset-password` - Reset the password for the registered mail
 - `/auth/resend` - Resend email verification code
 
 
