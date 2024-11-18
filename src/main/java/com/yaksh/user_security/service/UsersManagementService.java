@@ -5,6 +5,7 @@ import com.yaksh.user_security.dto.ReqRes;
 import com.yaksh.user_security.entity.ChangePassword;
 import com.yaksh.user_security.entity.OurUsers;
 import com.yaksh.user_security.entity.VerifyUser;
+import com.yaksh.user_security.repository.PasswordTokenRepo;
 import com.yaksh.user_security.repository.UsersRepo;
 import com.yaksh.user_security.utils.JWTUtils;
 import com.yaksh.user_security.utils.ValidationChecks;
@@ -16,12 +17,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,8 @@ public class UsersManagementService {
     @Autowired
     private UsersRepo usersRepo;
     @Autowired
+    private PasswordTokenRepo passwordTokenRepo;
+    @Autowired
     private JWTUtils jwtUtils;
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -39,6 +42,8 @@ public class UsersManagementService {
 
     @Autowired
     private EmailService emailService;
+
+
 
 
     public ReqRes register(ReqRes registrationRequest){
@@ -204,39 +209,116 @@ public class UsersManagementService {
         return response;
     }
 
-    public ReqRes forgotPassword(ChangePassword body) {
+    public ReqRes forgotPassword(String email) {
         ReqRes response = new ReqRes();
 
         try{
-            if(!validationChecks.isUserPresent(body.getEmail())){
+
+            if(validationChecks.isUserPresent(email)){
+                String token = generatePasswordToken();
+                ChangePassword body = new ChangePassword();
+                body.setEmail(email);
+                String encodedToken = DigestUtils.appendMd5DigestAsHex(token.getBytes(), new StringBuilder()).toString();
+                body.setPasswordToken(encodedToken);
+                body.setPasswordTokenExpiresAt(LocalDateTime.now().plusMinutes(15));
+                passwordTokenRepo.save(body);
+                String subject = "Password reset token";
+                String htmlMessage = "<html>"
+                        + "<body style=\"font-family: Arial, sans-serif;\">"
+                        + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
+                        + "<h2 style=\"color: #333;\">Welcome to our app!</h2>"
+                        + "<p style=\"font-size: 16px;\">Please click on the link below to continue:</p>"
+                        + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
+                        + "<h3 style=\"color: #333;\">Password Token:</h3>"
+                        + "<p style=\"font-size: 18px; font-weight: bold; color: #007bff;\">" + "http://localhost:8080/auth/reset-password?token="+ token + "</p>"
+                        + "</div>"
+                        + "</div>"
+                        + "</body>"
+                        + "</html>";
+                emailService.sendEmailVerification(email, subject, htmlMessage);
+
+            }else{
                 throw new CustomValidationException(
                         "Account does not exists.",
                         ErrorCode.USER_NOT_FOUND);
             }
-//            if(!validationChecks.isValidEmail(body.getEmail())){
-//                throw new CustomValidationException(
-//                        "Email is not valid, please check your email.",
-//                        ErrorCode.INVALID_EMAIL);
-//            }
-            if(!validationChecks.isValidPassword(body.getPassword())){
-                throw new CustomValidationException("Password must be at least 8 characters long and contain an uppercase letter, lowercase letter, a digit, and a special character."
-                        , ErrorCode.INVALID_PASSWORD);
-            }
-            OurUsers user = usersRepo.findByEmail(body.getEmail()).orElse(null);
-            if(!user.isEnabled()){
-                throw new CustomValidationException("Account is not verified,please verify your account.",ErrorCode.USER_ALREADY_VERIFIED);
-            }
-            String encoded_password=passwordEncoder.encode(body.getPassword());
-            user.setPassword(encoded_password);
-            usersRepo.save(user);
+
             response.setStatusCode(200);
-            response.setMessage("Password Successfully changed");
+            response.setMessage("Password Token Successfully sent");
             return response;
         }catch (CustomValidationException e){
             throw e;
-        }catch (Exception e){
+        }catch (MessagingException e) {
             response.setStatusCode(500);
             response.setMessage("error: "+e.getMessage());
+            return response;
+        }
+        catch (Exception e){
+            response.setStatusCode(500);
+            response.setMessage("error: "+e.getMessage());
+            return response;
+        }
+    }
+
+    public static String generatePasswordToken() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] randomBytes = new byte[48]; // 48 bytes give ~64 Base64 characters
+        secureRandom.nextBytes(randomBytes);
+        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+        return token.substring(0, 64);
+    }
+
+    public ReqRes resetPassword(String token,String newPassword) {
+        ReqRes response = new ReqRes();
+
+        try {
+            // Hash the token for lookup
+            String encodedToken = DigestUtils.appendMd5DigestAsHex(token.getBytes(), new StringBuilder()).toString();
+
+            // Retrieve the ChangePassword entity directly using the hashed token
+            ChangePassword tokenEntity = passwordTokenRepo.findByPasswordToken(encodedToken);
+            if (tokenEntity == null) {
+                throw new CustomValidationException("Invalid password reset token.", ErrorCode.INVALID_TOKEN);
+            }
+
+            // Check token expiration
+            if (tokenEntity.getPasswordTokenExpiresAt().isBefore(LocalDateTime.now())) {
+                throw new CustomValidationException("Password reset token has expired.", ErrorCode.TOKEN_EXPIRED);
+            }
+
+            // Validate the new password against security rules
+            if (!validationChecks.isValidPassword(newPassword)) {
+                throw new CustomValidationException(
+                        "Password must be at least 8 characters long and contain an uppercase letter, lowercase letter, a digit, and a special character.",
+                        ErrorCode.INVALID_PASSWORD
+                );
+            }
+
+            // Retrieve the user associated with the token
+            OurUsers user = usersRepo.findByEmail(tokenEntity.getEmail())
+                    .orElseThrow(() -> new CustomValidationException("User not found.", ErrorCode.USER_NOT_FOUND));
+
+            // Ensure the user's account is active and verified
+            if (!user.isEnabled()) {
+                throw new CustomValidationException("Account is not verified. Please verify your account.", ErrorCode.ACCOUNT_NOT_VERIFIED);
+            }
+
+            // Update the user's password
+            user.setPassword(passwordEncoder.encode(newPassword));
+            usersRepo.save(user);
+
+            // Clean up all password reset tokens for the user
+            passwordTokenRepo.deleteByEmail(tokenEntity.getEmail());
+
+            // Return success response
+            response.setStatusCode(200);
+            response.setMessage("Password successfully changed.");
+            return response;
+        } catch (CustomValidationException e) {
+            throw e; // Re-throw custom exceptions to be handled by the exception handler
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.setMessage("An error occurred: " + e.getMessage());
             return response;
         }
     }

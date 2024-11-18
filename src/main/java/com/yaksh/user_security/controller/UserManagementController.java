@@ -30,8 +30,13 @@ public class UserManagementController {
     }
 
     @PostMapping("/auth/forgotPassword")
-    public ResponseEntity<?> forgotPassword(@RequestBody ChangePassword body){
-        return ResponseEntity.ok(usersManagementService.forgotPassword(body));
+    public ResponseEntity<?> forgotPassword(@RequestParam String email){
+        return ResponseEntity.ok(usersManagementService.forgotPassword(email));
+    }
+
+    @PostMapping("/auth/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestParam String token,@RequestParam String newPassword){
+        return ResponseEntity.ok(usersManagementService.resetPassword(token,newPassword));
     }
 
     @PostMapping("/auth/refresh")

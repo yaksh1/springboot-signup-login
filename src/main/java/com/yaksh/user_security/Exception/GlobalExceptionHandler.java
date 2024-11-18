@@ -31,6 +31,8 @@ public class GlobalExceptionHandler {
                 || e.getErrorCode()==ErrorCode.INAPPROPRIATE_REVIEW
                 || e.getErrorCode()==ErrorCode.REVIEW_TOO_SHORT
                 || e.getErrorCode() == ErrorCode.ACCOUNT_BANNED
+                || e.getErrorCode()==ErrorCode.INVALID_TOKEN
+                || e.getErrorCode()==ErrorCode.TOKEN_EXPIRED
 
         ) {
             errorDetails.setStatusCode(HttpStatus.BAD_REQUEST.value());
