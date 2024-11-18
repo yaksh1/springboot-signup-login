@@ -358,11 +358,13 @@ public class UsersManagementService {
                 reqRes.setStatusCode(200);
                 reqRes.setMessage("Successful");
             } else {
-                reqRes.setStatusCode(404);
-                reqRes.setMessage("No users found");
+                throw new CustomValidationException("Users not found",ErrorCode.DATA_NOT_FOUND);
             }
             return reqRes;
-        } catch (Exception e) {
+        }catch (CustomValidationException e){
+            throw e;
+        }
+        catch (Exception e) {
             reqRes.setStatusCode(500);
             reqRes.setMessage("Error occurred: " + e.getMessage());
             return reqRes;
@@ -370,14 +372,17 @@ public class UsersManagementService {
     }
 
 
-    public ReqRes getUsersById(Integer id) {
+    public ReqRes getUsersById(String email) {
         ReqRes reqRes = new ReqRes();
         try {
-            OurUsers usersById = usersRepo.findById(id).orElseThrow(() -> new RuntimeException("User Not found"));
+            OurUsers usersById = usersRepo.findByEmail(email).orElseThrow(() -> new CustomValidationException("User Not found",ErrorCode.USER_NOT_FOUND));
             reqRes.setOurUsers(usersById);
             reqRes.setStatusCode(200);
-            reqRes.setMessage("Users with id '" + id + "' found successfully");
-        } catch (Exception e) {
+            reqRes.setMessage("Users with email id '" + email + "' found successfully");
+        }catch (CustomValidationException e){
+            throw e;
+        }
+        catch (Exception e) {
             reqRes.setStatusCode(500);
             reqRes.setMessage("Error occurred: " + e.getMessage());
         }
@@ -394,20 +399,22 @@ public class UsersManagementService {
                 reqRes.setStatusCode(200);
                 reqRes.setMessage("User deleted successfully");
             } else {
-                reqRes.setStatusCode(404);
-                reqRes.setMessage("User not found for deletion");
+                throw new CustomValidationException("User not found.",ErrorCode.USER_NOT_FOUND);
             }
-        } catch (Exception e) {
+        }catch (CustomValidationException e){
+            throw e;
+        }
+        catch (Exception e) {
             reqRes.setStatusCode(500);
             reqRes.setMessage("Error occurred while deleting user: " + e.getMessage());
         }
         return reqRes;
     }
 
-    public ReqRes updateUser(Integer userId, OurUsers updatedUser) {
+    public ReqRes updateUser(String email, OurUsers updatedUser) {
         ReqRes reqRes = new ReqRes();
         try {
-            Optional<OurUsers> userOptional = usersRepo.findById(userId);
+            Optional<OurUsers> userOptional = usersRepo.findByEmail(email);
             if (userOptional.isPresent()) {
                 OurUsers existingUser = userOptional.get();
                 existingUser.setEmail(updatedUser.getEmail());
@@ -424,10 +431,12 @@ public class UsersManagementService {
                 reqRes.setStatusCode(200);
                 reqRes.setMessage("User updated successfully");
             } else {
-                reqRes.setStatusCode(404);
-                reqRes.setMessage("User not found for update");
+                throw new CustomValidationException("User not found.",ErrorCode.USER_NOT_FOUND);
             }
-        } catch (Exception e) {
+        }catch (CustomValidationException e){
+            throw e;
+        }
+        catch (Exception e) {
             reqRes.setStatusCode(500);
             reqRes.setMessage("Error occurred while updating user: " + e.getMessage());
         }
@@ -444,11 +453,13 @@ public class UsersManagementService {
                 reqRes.setStatusCode(200);
                 reqRes.setMessage("successful");
             } else {
-                reqRes.setStatusCode(404);
-                reqRes.setMessage("User not found for update");
+                throw new CustomValidationException("User not found.",ErrorCode.USER_NOT_FOUND);
             }
 
-        }catch (Exception e){
+        }catch (CustomValidationException e){
+            throw e;
+        }
+        catch (Exception e){
             reqRes.setStatusCode(500);
             reqRes.setMessage("Error occurred while getting user info: " + e.getMessage());
         }

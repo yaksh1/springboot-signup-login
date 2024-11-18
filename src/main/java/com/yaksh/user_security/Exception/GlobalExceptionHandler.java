@@ -23,7 +23,6 @@ public class GlobalExceptionHandler {
         if (e.getErrorCode()==ErrorCode.USER_ALREADY_EXISTS
                 ||e.getErrorCode()==ErrorCode.INVALID_EMAIL
                 ||e.getErrorCode()==ErrorCode.INVALID_PASSWORD
-                || e.getErrorCode()==ErrorCode.USER_NOT_FOUND
                 || e.getErrorCode()==ErrorCode.OTP_EXPIRED
                 || e.getErrorCode()==ErrorCode.INVALID_OTP
                 || e.getErrorCode()==ErrorCode.USER_ALREADY_VERIFIED
@@ -39,7 +38,8 @@ public class GlobalExceptionHandler {
             errorDetails.setStatus(HttpStatus.BAD_REQUEST.name());
             return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
         }
-        else if(e.getErrorCode()==ErrorCode.DATA_NOT_FOUND){
+        else if(e.getErrorCode()==ErrorCode.DATA_NOT_FOUND
+                || e.getErrorCode()==ErrorCode.USER_NOT_FOUND){
             errorDetails.setStatusCode(HttpStatus.NOT_FOUND.value());
             errorDetails.setStatus(HttpStatus.NOT_FOUND.name());
         }
