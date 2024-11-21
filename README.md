@@ -26,17 +26,55 @@ This project is a quickstart template of registration and login process with JWT
   - **MySQL** for user data storage.
 - **Bcrypt**: Passwords are securely hashed before storing in the database.
 
-## Applications
+## API Endpoints
 
 **Important**: All API endpoints can be accessed here after running the backend - http://localhost:8080/swagger-ui/index.html#/. Make sure to put `/v3/api-docs` in explore search bar.
 
-base url -> `http://localhost:8080`
-- `/auth/register` - Register a new user
-- `/auth/login` - Get a JWT token after successful login
-- `/auth/verify` - Email verification with OTP
-- `/auth/forgotPassword` - Get the password reset link in the registered mail
-- `/auth/reset-password` - Reset the password for the registered mail
-- `/auth/resend` - Resend email verification code
+
+
+### **Base URL**: `http://localhost:8080`
+
+---
+
+### **Authentication Endpoints**
+
+1. **POST** `/auth/register`  
+   Register a new user.
+
+2. **POST** `/auth/login`  
+   Get a JWT token after successful login.
+
+3. **POST** `/auth/verify`  
+   Verify email with OTP.
+
+4. **POST** `/auth/forgotPassword`  
+   Send a password reset link to the registered email.
+
+5. **POST** `/auth/reset-password`  
+   Reset the password for the registered email.
+
+6. **POST** `/auth/resend`  
+   Resend the email verification code.
+
+---
+
+### **Admin User Management Endpoints**
+
+1. **GET** `/admin/get-all-users`  
+   Fetch details of all users.
+
+2. **GET** `/admin/get-users/{email}`  
+   Fetch user details by email.
+
+3. **PUT** `/admin/update/{email}`  
+   Update user details by email.
+
+4. **GET** `/adminuser/get-profile`  
+   Fetch profile details of the currently authenticated user.
+
+5. **DELETE** `/admin/delete`  
+   Delete a user by email.
+
 
 
 ### Setup

@@ -2,6 +2,7 @@ package com.yaksh.user_security.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +18,10 @@ import java.util.function.Function;
 public class JWTUtils {
 
     private SecretKey Key;
-    private  static  final long EXPIRATION_TIME = 86400000;  //24 hours
+//    private  static  final long EXPIRATION_TIME = 86400000;  //24 hours
+    @Value("${security.jwt.expiration-time}")
+    private long EXPIRATION_TIME;
+
 
     public JWTUtils(){
         String secreteString = "843567893696976453275974432697R634976R738467TR678T34865R6834R8763T478378637664538745673865783678548735687R3";
